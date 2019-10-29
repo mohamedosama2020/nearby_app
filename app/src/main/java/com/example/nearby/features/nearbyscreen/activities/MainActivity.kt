@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.example.nearby.features.nearbyscreen.activities
 
 import android.annotation.SuppressLint
@@ -20,9 +22,10 @@ import com.example.nearby.base.managers.ManagerSharedPreference
 import com.example.nearby.base.vm.CommonStates
 import com.example.nearby.base.vm.LocationStates
 import com.example.nearby.entities.nearby.response.Venue
-import com.example.nearby.realtime.TrackingService
 import com.example.nearby.features.nearbyscreen.adapter.VenuesAdapter
 import com.example.nearby.features.nearbyscreen.vm.ViewModelNearby
+import com.example.nearby.realtime.TrackingService
+import com.google.android.gms.location.LocationSettingsStatusCodes
 import com.tbruyelle.rxpermissions2.RxPermissions
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.error_empty_layout.*
@@ -31,7 +34,7 @@ import kotlinx.android.synthetic.main.error_empty_layout.*
 @Suppress("DEPRECATION")
 class MainActivity : BaseActivity(), GpsUtils.OnGpsListener {
 
-    lateinit var trackingService: Intent
+
     private lateinit var viewModelNearby: ViewModelNearby
     private val rxPermission = RxPermissions(this)
     private var firstTime = true
@@ -40,7 +43,7 @@ class MainActivity : BaseActivity(), GpsUtils.OnGpsListener {
     override fun gpsStatus(isGPSEnable: Boolean) {
         if (isGPSEnable)
             checkPermission()
-        else{
+        else {
             setEmptyErrorView(R.drawable.ic_cloud_off_black, getString(R.string.error))
             empty_error_view.visibility = View.VISIBLE
         }
@@ -58,27 +61,37 @@ class MainActivity : BaseActivity(), GpsUtils.OnGpsListener {
 
         menuInflater.inflate(R.menu.tool_bar_menu, menu)
         val appMode = ManagerSharedPreference.instance.getMode()
-        if(appMode == 0){
+        if (appMode == 0) {
             menu?.getItem(0)?.title = getString(R.string.realtime)
-        }else{
+        } else {
             menu?.getItem(0)?.title = getString(R.string.singletime)
         }
         return true
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        when(item.itemId){
-            R.id.menuRealTime ->{
-                if(item.title == getString(R.string.realtime)){
+        when (item.itemId) {
+            R.id.menuRealTime -> {
+                if (item.title == getString(R.string.realtime)) {
                     ManagerSharedPreference.instance.setMode(1)
                     item.title = getString(R.string.singletime)
-                }else{
+                } else {
                     ManagerSharedPreference.instance.setMode(0)
                     item.title = getString(R.string.realtime)
                 }
             }
         }
         return true
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == 100) {
+            when (resultCode) {
+                LocationSettingsStatusCodes.SUCCESS_CACHE -> checkPermission()
+                else -> return
+            }
+        }
     }
 
     private fun initComponent() {
@@ -106,8 +119,8 @@ class MainActivity : BaseActivity(), GpsUtils.OnGpsListener {
                     callData(it.latitude.toString(), it.longitude.toString())
                     firstTime = false
                     //If Mode Is Single Then Stop The Realtime Tracking Service
-                    if(ManagerSharedPreference.instance.getMode()==1)
-                        stopService(trackingService)
+                    if (ManagerSharedPreference.instance.getMode() == 1)
+                        stopService(Intent(this,TrackingService::class.java))
                 } else {
                     checkDistance(it)
                 }
@@ -156,8 +169,7 @@ class MainActivity : BaseActivity(), GpsUtils.OnGpsListener {
      */
     private fun startTrackerService() {
         showLoading()
-        trackingService = Intent(this, TrackingService::class.java)
-        startService(trackingService)
+        startService(Intent(this,TrackingService::class.java))
     }
 
 
@@ -200,6 +212,7 @@ class MainActivity : BaseActivity(), GpsUtils.OnGpsListener {
                     rvVenues.apply {
                         adapter = VenuesAdapter(venues)
                         layoutManager = LinearLayoutManager(this@MainActivity)
+                        visibility = View.VISIBLE
                     }
                 } else {
                     setEmptyErrorView(
@@ -214,14 +227,21 @@ class MainActivity : BaseActivity(), GpsUtils.OnGpsListener {
         }
     }
 
+    override fun onStop() {
+        super.onStop()
+        locationLiveData.value = null
+    }
+
     override fun onDestroy() {
         super.onDestroy()
-        stopService(trackingService)
+        viewModelNearby.states.value = null
+        stopService(Intent(this,TrackingService::class.java))
         firstTime = false
     }
 
 
     private fun callData(lat: String, long: String) {
+        rvVenues.visibility = View.GONE
         viewModelNearby.getNearbyPlaces("${lat},${long}")
     }
 
@@ -232,8 +252,8 @@ class MainActivity : BaseActivity(), GpsUtils.OnGpsListener {
             android.Manifest.permission.ACCESS_FINE_LOCATION
         ).subscribe { granted ->
             if (granted) {
+                empty_error_view.visibility = View.GONE
                 startTrackerService()
-                showLoading()
             } else {
                 Toast.makeText(this, "Permission Revoked", Toast.LENGTH_SHORT).show()
                 setEmptyErrorView(R.drawable.ic_cloud_off_black, getString(R.string.error))
