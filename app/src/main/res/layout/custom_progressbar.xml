@@ -12,7 +12,7 @@
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="8dp"
         app:cardCornerRadius="12dp"
-        app:cardElevation="20dp"
+        app:cardElevation="8dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -20,6 +20,6 @@
 
     <ProgressBar
             android:id="@+id/animation_view"
-            android:layout_width="100dp"
-            android:layout_height="100dp" />
+            android:layout_width="50dp"
+            android:layout_height="50dp" />
 </androidx.cardview.widget.CardView>

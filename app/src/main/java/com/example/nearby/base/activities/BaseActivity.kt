@@ -17,6 +17,7 @@ open class BaseActivity : AppCompatActivity() {
 
 
     fun showLoading() {
+        progressBar.setCancelable(false)
         progressBar.show()
     }
 
