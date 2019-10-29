@@ -1,21 +1,29 @@
 package com.example.nearby.base.helper
 
+import android.Manifest
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.app.AlertDialog
 import android.app.Dialog
 import android.content.Context
 import android.content.DialogInterface
+import android.content.pm.PackageManager
 import android.graphics.Color
+import android.location.Location
 import android.net.ConnectivityManager
 import android.view.Gravity
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.MutableLiveData
 import com.example.nearby.R
 
 object Utility {
 
 
     val PermessionCodeLocation = 600
+    var locationLiveData = MutableLiveData<Location>()
     const val PermissionCode = 601
     lateinit var alertDialog: AlertDialog
 
@@ -246,6 +254,23 @@ object Utility {
         }
     }
 
+     fun checkPermission(permission: String, activity: Activity): Boolean {
+        return ContextCompat.checkSelfPermission(
+            activity,
+            permission
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+     fun requestPermission(permission: String, activity: Activity) {
+        if (permission == Manifest.permission.ACCESS_COARSE_LOCATION || permission == Manifest.permission.ACCESS_FINE_LOCATION) {
+            ActivityCompat.requestPermissions(
+                activity,
+                arrayOf(permission),
+                PermessionCodeLocation
+            )
+        } else
+            ActivityCompat.requestPermissions(activity, arrayOf(permission), Utility.PermissionCode)
+    }
 }
 
 

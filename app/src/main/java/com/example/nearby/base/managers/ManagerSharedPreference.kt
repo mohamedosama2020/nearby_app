@@ -12,25 +12,36 @@ class ManagerSharedPreference {
     private lateinit var sharedPreferences: SharedPreferences
     private var editor: SharedPreferences.Editor? = null
     private var context: Context? = null
-//    private val loginDataUser = "LoginUser"
+    private val lat = "lat"
+    private val long = "long"
+    private val locationProvider = "provider"
 
-//    fun setLoginDataUser(loginDataUser: String) {
-//        editor?.putString(this.loginDataUser, loginDataUser)
-//        editor?.commit()
-//    }
-//
-//    fun getLoginDataUser(): LoginResponse? {
-//        return try {
-//            Gson().fromJson(
-//                sharedPreferences.getString(loginDataUser, "") ?: "",
-//                LoginResponse::class.java
-//            )
-//
-//        } catch (ex: Exception) {
-//            ex.printStackTrace()
-//            null
-//        }
-//    }
+    fun setLat(latitude: String?) {
+        editor?.putString(lat, latitude)
+        editor?.commit()
+    }
+
+    fun getLat(): String? {
+        return sharedPreferences.getString(lat, "")
+    }
+
+    fun setLong(longtiude: String?) {
+        editor?.putString(long, longtiude)
+        editor?.commit()
+    }
+
+    fun getLong(): String? {
+        return sharedPreferences.getString(long, "")
+    }
+
+    fun setLocationProvider(provider: String?) {
+        editor?.putString(locationProvider, provider)
+        editor?.commit()
+    }
+
+    fun getLocationProvider(): String? {
+        return sharedPreferences.getString(locationProvider, "")
+    }
 
     companion object {
 
