@@ -1,4 +1,4 @@
-package com.example.nearby.features.nearbyscreen
+package com.example.nearby.realtime
 
 import android.Manifest
 import android.app.Service
@@ -9,12 +9,12 @@ import android.content.pm.PackageManager
 import android.os.IBinder
 import androidx.core.content.ContextCompat
 import com.example.nearby.base.helper.Utility
-import com.google.android.gms.location.LocationCallback
-import com.google.android.gms.location.LocationRequest
-import com.google.android.gms.location.LocationResult
-import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.*
 
 class TrackingService : Service() {
+
+    lateinit var client: FusedLocationProviderClient
+    lateinit var locationCallBack: LocationCallback
 
     private var stopReceiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -23,7 +23,6 @@ class TrackingService : Service() {
             unregisterReceiver(this)
 
             //Stop the Service//
-
             stopSelf()
         }
     }
@@ -34,7 +33,14 @@ class TrackingService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-
+        locationCallBack = object: LocationCallback(){
+            override fun onLocationResult(p0: LocationResult?) {
+                val location = p0?.lastLocation
+                if (location != null) {
+                    Utility.locationLiveData.value = location
+                }
+            }
+        }
         requestLocationUpdates()
     }
 
@@ -49,7 +55,7 @@ class TrackingService : Service() {
         //Get the most accurate location data available//
 
         request.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
-        val client = LocationServices.getFusedLocationProviderClient(this)
+        client = LocationServices.getFusedLocationProviderClient(this)
         val permission = ContextCompat.checkSelfPermission(
             this,
             Manifest.permission.ACCESS_FINE_LOCATION
@@ -61,21 +67,15 @@ class TrackingService : Service() {
 
             //...then request location updates//
 
-            client.requestLocationUpdates(request, object : LocationCallback() {
-                override fun onLocationResult(locationResult: LocationResult?) {
-
-                    val location = locationResult!!.lastLocation
-                    if (location != null) {
-                        val p0 = location
-                        Utility.locationLiveData.value = location
-                    }
-                }
-            }, null)
+            client.requestLocationUpdates(request, locationCallBack, null)
         }
     }
 
-    companion object {
-
-        private val TAG = TrackingService::class.java.simpleName
+    override fun onDestroy() {
+        super.onDestroy()
+        this.stopSelf()
+        this.stopService(Intent(this,TrackingService::class.java))
+        stopForeground(true)
+        client.removeLocationUpdates(locationCallBack)
     }
 }

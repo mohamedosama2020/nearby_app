@@ -16,6 +16,7 @@ class ModelNearby : MainModel() {
         states: MutableLiveData<CommonStates<LocationStates>>,
         location: String
     ) {
+        states.value = CommonStates.LoadingShow
         getDisposable(states, true)?.add(
             apiClient.getNearbyPlaces(location)
                 .subscribeOn(Schedulers.io())

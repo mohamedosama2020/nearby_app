@@ -15,6 +15,7 @@ class ManagerSharedPreference {
     private val lat = "lat"
     private val long = "long"
     private val locationProvider = "provider"
+    private val appMode = "appMode"// 0 -> Real Time  ,   1 -> Single Time
 
     fun setLat(latitude: String?) {
         editor?.putString(lat, latitude)
@@ -23,6 +24,15 @@ class ManagerSharedPreference {
 
     fun getLat(): String? {
         return sharedPreferences.getString(lat, "")
+    }
+
+    fun setMode(mode: Int) {
+        editor?.putInt(appMode, mode)
+        editor?.commit()
+    }
+
+    fun getMode(): Int? {
+        return sharedPreferences.getInt(appMode, 0)
     }
 
     fun setLong(longtiude: String?) {

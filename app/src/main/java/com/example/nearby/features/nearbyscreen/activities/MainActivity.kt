@@ -4,6 +4,8 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.location.Location
 import android.os.Bundle
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
@@ -18,7 +20,7 @@ import com.example.nearby.base.managers.ManagerSharedPreference
 import com.example.nearby.base.vm.CommonStates
 import com.example.nearby.base.vm.LocationStates
 import com.example.nearby.entities.nearby.response.Venue
-import com.example.nearby.features.nearbyscreen.TrackingService
+import com.example.nearby.realtime.TrackingService
 import com.example.nearby.features.nearbyscreen.adapter.VenuesAdapter
 import com.example.nearby.features.nearbyscreen.vm.ViewModelNearby
 import com.tbruyelle.rxpermissions2.RxPermissions
@@ -29,6 +31,7 @@ import kotlinx.android.synthetic.main.error_empty_layout.*
 @Suppress("DEPRECATION")
 class MainActivity : BaseActivity(), GpsUtils.OnGpsListener {
 
+    lateinit var trackingService: Intent
     private lateinit var viewModelNearby: ViewModelNearby
     private val rxPermission = RxPermissions(this)
     private var firstTime = true
@@ -37,6 +40,10 @@ class MainActivity : BaseActivity(), GpsUtils.OnGpsListener {
     override fun gpsStatus(isGPSEnable: Boolean) {
         if (isGPSEnable)
             checkPermission()
+        else{
+            setEmptyErrorView(R.drawable.ic_cloud_off_black, getString(R.string.error))
+            empty_error_view.visibility = View.VISIBLE
+        }
 
     }
 
@@ -45,6 +52,33 @@ class MainActivity : BaseActivity(), GpsUtils.OnGpsListener {
         setContentView(R.layout.activity_main)
         initComponent()
         initObserve()
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+
+        menuInflater.inflate(R.menu.tool_bar_menu, menu)
+        val appMode = ManagerSharedPreference.instance.getMode()
+        if(appMode == 0){
+            menu?.getItem(0)?.title = getString(R.string.realtime)
+        }else{
+            menu?.getItem(0)?.title = getString(R.string.singletime)
+        }
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when(item.itemId){
+            R.id.menuRealTime ->{
+                if(item.title == getString(R.string.realtime)){
+                    ManagerSharedPreference.instance.setMode(1)
+                    item.title = getString(R.string.singletime)
+                }else{
+                    ManagerSharedPreference.instance.setMode(0)
+                    item.title = getString(R.string.realtime)
+                }
+            }
+        }
+        return true
     }
 
     private fun initComponent() {
@@ -66,12 +100,15 @@ class MainActivity : BaseActivity(), GpsUtils.OnGpsListener {
         })
         locationLiveData.observe(this, Observer {
             if (it != null) {
+                hideLoading()
                 if (firstTime) {
                     saveToSharedPrefs(it)
                     callData(it.latitude.toString(), it.longitude.toString())
                     firstTime = false
+                    //If Mode Is Single Then Stop The Realtime Tracking Service
+                    if(ManagerSharedPreference.instance.getMode()==1)
+                        stopService(trackingService)
                 } else {
-                    hideLoading()
                     checkDistance(it)
                 }
 
@@ -101,8 +138,6 @@ class MainActivity : BaseActivity(), GpsUtils.OnGpsListener {
         if (location.distanceTo(savedLocation) >= 500f) {
             saveToSharedPrefs(location)
             callData(location.latitude.toString(), location.longitude.toString())
-        } else {
-            saveToSharedPrefs(location)
         }
 
     }
@@ -113,6 +148,7 @@ class MainActivity : BaseActivity(), GpsUtils.OnGpsListener {
     private fun saveToSharedPrefs(location: Location) {
         ManagerSharedPreference.instance.setLat(location.latitude.toString())
         ManagerSharedPreference.instance.setLong(location.longitude.toString())
+        ManagerSharedPreference.instance.setLocationProvider(location.provider)
     }
 
     /**
@@ -120,7 +156,8 @@ class MainActivity : BaseActivity(), GpsUtils.OnGpsListener {
      */
     private fun startTrackerService() {
         showLoading()
-        startService(Intent(this, TrackingService::class.java))
+        trackingService = Intent(this, TrackingService::class.java)
+        startService(trackingService)
     }
 
 
@@ -179,7 +216,7 @@ class MainActivity : BaseActivity(), GpsUtils.OnGpsListener {
 
     override fun onDestroy() {
         super.onDestroy()
-        stopService(Intent(this, TrackingService::class.java))
+        stopService(trackingService)
         firstTime = false
     }
 

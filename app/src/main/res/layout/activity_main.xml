@@ -20,6 +20,8 @@
 
     <include android:id="@+id/empty_error_view"
         layout="@layout/error_empty_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:visibility="gone"
         />
 
