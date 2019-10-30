@@ -1,4 +1,4 @@
-package com.example.nearby.entities.nearby.response
+package com.example.nearby.entities.nearbyvenues.response
 
 
 data class Items (

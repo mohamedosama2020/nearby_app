@@ -25,6 +25,7 @@ object Utility {
     val PermessionCodeLocation = 600
     var locationLiveData = MutableLiveData<Location>()
     const val PermissionCode = 601
+    const val PHOTO_SIZE = "500x300"
     lateinit var alertDialog: AlertDialog
 
 //    fun getDateNow(): String {

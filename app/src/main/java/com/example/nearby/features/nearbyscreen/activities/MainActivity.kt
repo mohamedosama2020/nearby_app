@@ -17,11 +17,12 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.nearby.R
 import com.example.nearby.base.activities.BaseActivity
 import com.example.nearby.base.helper.GpsUtils
+import com.example.nearby.base.helper.Utility
 import com.example.nearby.base.helper.Utility.locationLiveData
 import com.example.nearby.base.managers.ManagerSharedPreference
 import com.example.nearby.base.vm.CommonStates
 import com.example.nearby.base.vm.LocationStates
-import com.example.nearby.entities.nearby.response.Venue
+import com.example.nearby.entities.nearbyvenues.response.Venue
 import com.example.nearby.features.nearbyscreen.adapter.VenuesAdapter
 import com.example.nearby.features.nearbyscreen.vm.ViewModelNearby
 import com.example.nearby.realtime.TrackingService
@@ -36,6 +37,9 @@ class MainActivity : BaseActivity(), GpsUtils.OnGpsListener {
 
 
     private lateinit var viewModelNearby: ViewModelNearby
+    private var photosList = mutableListOf<String>()
+    private var numberOfPlaces = 0
+    private var venues = mutableListOf<Venue>()
     private val rxPermission = RxPermissions(this)
     private var firstTime = true
 
@@ -120,7 +124,7 @@ class MainActivity : BaseActivity(), GpsUtils.OnGpsListener {
                     firstTime = false
                     //If Mode Is Single Then Stop The Realtime Tracking Service
                     if (ManagerSharedPreference.instance.getMode() == 1)
-                        stopService(Intent(this,TrackingService::class.java))
+                        stopService(Intent(this, TrackingService::class.java))
                 } else {
                     checkDistance(it)
                 }
@@ -169,7 +173,7 @@ class MainActivity : BaseActivity(), GpsUtils.OnGpsListener {
      */
     private fun startTrackerService() {
         showLoading()
-        startService(Intent(this,TrackingService::class.java))
+        startService(Intent(this, TrackingService::class.java))
     }
 
 
@@ -204,15 +208,16 @@ class MainActivity : BaseActivity(), GpsUtils.OnGpsListener {
         when (response) {
             is LocationStates.NearbyPlacesSuccess -> {
 
-                //Check If There No Items
+                //Check If There Items Or Not
                 if (response.data.response.totalResults > 0) {
+                    numberOfPlaces = response.data.response.totalResults
                     //Set Data To Adapter
-                    val venues = mutableListOf<Venue>()
                     response.data.response.groups[0].items.forEach { venues.add(it.venue) }
                     rvVenues.apply {
                         adapter = VenuesAdapter(venues)
                         layoutManager = LinearLayoutManager(this@MainActivity)
                         visibility = View.VISIBLE
+                        callPhotosApi()
                     }
                 } else {
                     setEmptyErrorView(
@@ -223,7 +228,23 @@ class MainActivity : BaseActivity(), GpsUtils.OnGpsListener {
                 }
 
             }
+            is LocationStates.NearbyPhotoSuccess -> {
+                //Handle URL Of The Photo
+                val prefix = response.data.response.photos.items[0].prefix
+                val suffix = response.data.response.photos.items[0].suffix
+                val url = prefix+Utility.PHOTO_SIZE+suffix
+                photosList.add(0,url)
+                callPhotosApi()
+            }
+        }
+    }
 
+    private fun callPhotosApi() {
+        if(numberOfPlaces>0){
+            viewModelNearby.getPlacePhoto(venues[numberOfPlaces-1].id)
+            numberOfPlaces--
+        }else{
+            return
         }
     }
 
@@ -235,7 +256,7 @@ class MainActivity : BaseActivity(), GpsUtils.OnGpsListener {
     override fun onDestroy() {
         super.onDestroy()
         viewModelNearby.states.value = null
-        stopService(Intent(this,TrackingService::class.java))
+        stopService(Intent(this, TrackingService::class.java))
         firstTime = false
     }
 

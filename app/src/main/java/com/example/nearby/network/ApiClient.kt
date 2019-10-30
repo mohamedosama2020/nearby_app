@@ -1,7 +1,8 @@
 package com.example.nearby.network
 
 
-import com.example.nearby.entities.nearby.response.NearbyPlacesResponse
+import VenuePhotoResponse
+import com.example.nearby.entities.nearbyvenues.response.NearbyPlacesResponse
 import io.reactivex.Single
 
 
@@ -18,6 +19,10 @@ class ApiClient private constructor() : BaseClientApi() {
 
     fun getNearbyPlaces(location: String): Single<NearbyPlacesResponse> {
         return endPoint.getNearbyPlaces(location = location)
+    }
+
+    fun getPlacePhoto(venueID: String): Single<VenuePhotoResponse> {
+        return endPoint.getPlacePhoto(venueID)
     }
 
 }

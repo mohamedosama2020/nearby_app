@@ -16,6 +16,10 @@ class ViewModelNearby : ViewModel() {
         model.getNearbyPlaces(states, location)
     }
 
+    fun getPlacePhoto(venueID: String ) {
+        model.getPlacePhoto(states, venueID)
+    }
+
     override fun onCleared() {
         super.onCleared()
         model.clear()

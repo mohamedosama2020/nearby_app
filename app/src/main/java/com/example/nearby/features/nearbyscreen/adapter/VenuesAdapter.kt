@@ -6,7 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.example.nearby.R
-import com.example.nearby.entities.nearby.response.Venue
+import com.example.nearby.entities.nearbyvenues.response.Venue
 import kotlinx.android.synthetic.main.venue_item_layout.view.*
 
 class VenuesAdapter() :
